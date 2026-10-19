@@ -2,14 +2,15 @@
 
 **Assess. Detect. Improve.**
 
-RansomReady is a college project addressing NTRO problem statement 317: a Ransomware Readiness Assessment tool. Ransomware can disrupt an organisation’s operations and access to critical data. The project aims to help organisations understand their preparedness, identify gaps, and prioritise improvements. Phase 1 provides the desktop app foundation and a runtime information screen; the assessment features belong to later phases.
+RansomReady is a college project addressing NTRO problem statement 317: a Ransomware Readiness Assessment tool. Ransomware can disrupt an organisation’s operations and access to critical data. The project aims to help organisations understand their preparedness, identify gaps, and prioritise improvements. Phases 1 and 2 provide the secure desktop foundation, navigation shell, Home and About pages, and placeholders for future features. Assessments and analysis belong to later phases.
 
 ## Tech stack
 
 - Plain JavaScript and React for the renderer
 - Vite with the React plugin for development and UI builds
 - Electron for the desktop shell
-- Plain CSS with automatic light and dark mode
+- Plain CSS with an OS-aware, persistent light/dark theme toggle
+- lucide-react for icons
 - concurrently, wait-on and cross-env for portable development scripts
 
 No database, external API integration, custom native modules or packaging tools are used.
@@ -50,11 +51,22 @@ Build and open the desktop app using `dist/index.html`:
 npm start
 ```
 
-This is a local production-like run, not an installer or packaged release. A browser preview at the Vite URL displays a friendly message because Electron's bridge is only available in the desktop window.
+This is a local production-like run, not an installer or packaged release. A browser preview at the Vite URL works too; its About page displays a friendly runtime message because Electron's bridge is only available in the desktop window.
+
+## Project structure
+
+- `src/App.jsx`: holds the current page state and looks up its component.
+- `src/config/`: the navigation list, including page IDs, labels, icons and components. Register a new page in this one list.
+- `src/hooks/`: the theme hook reads a saved choice or OS preference, applies `data-theme`, and safely saves the choice under `ransomready-theme`.
+- `src/components/`: shared layout, sidebar, header, theme toggle and placeholder card.
+- `src/pages/`: Home, About and four empty feature pages.
+- `src/styles/`: layout and component CSS; global reset, spacing and theme variables live in `src/index.css`.
+
+Navigation uses React state without a router. Use Tab / Shift+Tab to move through buttons and Enter / Space to activate them. The header's theme button switches light/dark mode; the choice survives restarts when localStorage is available.
 
 ## Verify the setup
 
-In the Electron window, confirm that the placeholder card shows real Electron, Node and Chrome versions. In its DevTools console, check:
+In the Electron window, visit all six sidebar pages and check that the active item and header agree. Home's Start Assessment button should open the Assessment placeholder. Toggle the theme and restart the app to check persistence. The About page should show real Electron, Node and Chrome versions. In DevTools, check:
 
 ```js
 window.api                  // { getAppInfo: ... }
@@ -63,12 +75,12 @@ window.require              // undefined
 window.process              // undefined
 ```
 
-Confirm that the console has no errors or warnings. `npm run build` should complete successfully, and `npm start` should show the same versions from the built UI. The screen follows your operating system's light or dark preference.
+Confirm that the console has no errors or warnings. `npm run build` should complete successfully, and `npm start` should show the same versions from the built UI. Without a saved theme, the initial screen follows your operating system's light or dark preference.
 
 ## Roadmap
 
 - [x] Phase 1: Setup
-- [ ] Phase 2: UI shell
+- [x] Phase 2: UI shell
 - [ ] Phase 3: Question bank
 - [ ] Phase 4: Assessment wizard
 - [ ] Phase 5: Scoring engine
