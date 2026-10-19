@@ -1,0 +1,34 @@
+{
+  "name": "ransomready",
+  "productName": "RansomReady",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ransomware readiness assessment tool — Phase 1 setup.",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "concurrently --kill-others --names VITE,ELECTRON \"vite\" \"wait-on --timeout 60000 http://localhost:5173 && cross-env ELECTRON_DEV=true electron .\"",
+    "build": "vite build",
+    "start": "npm run build && cross-env ELECTRON_DEV=false electron ."
+  },
+  "dependencies": {
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.2",
+    "concurrently": "^10.0.5",
+    "cross-env": "^10.1.0",
+    "electron": "^44.4.5",
+    "vite": "^8.3.4",
+    "wait-on": "^9.1.0"
+  },
+  "overrides": {
+    "concurrently": {
+      "shell-quote": "^1.12.0"
+    }
+  }
+}

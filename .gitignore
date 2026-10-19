@@ -1,0 +1,12 @@
+node_modules/
+dist/
+out/
+.env
+.env.*
+!.env.example
+*.log
+npm-debug.log*
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
