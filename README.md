@@ -2,7 +2,7 @@
 
 **Assess. Detect. Improve.**
 
-RansomReady is a college project addressing NTRO problem statement 317: a Ransomware Readiness Assessment tool. Ransomware can disrupt an organisation’s operations and access to critical data. The project aims to help organisations understand their preparedness, identify gaps, and prioritise improvements. Phases 1 and 2 provide the secure desktop foundation, navigation shell, Home and About pages, and placeholders for future features. Phase 3 adds a bundled question bank and a temporary read-only Assessment preview. The questionnaire wizard, scoring engine, charts and scanner belong to later phases.
+RansomReady is a college project addressing NTRO problem statement 317: a Ransomware Readiness Assessment tool. Ransomware can disrupt an organisation’s operations and access to critical data. The project aims to help organisations understand their preparedness, identify gaps, and prioritise improvements. Phases 1 and 2 provide the secure desktop foundation, navigation shell, Home and About pages, and placeholders for future features. Phase 3 adds a bundled question bank. Phase 4 adds the assessment wizard, automatic draft saving, resume support, review and completed-answer storage. Scoring, charts, scanner and reports belong to later phases.
 
 ## Tech stack
 
@@ -24,7 +24,34 @@ React UI (renderer) <-> preload (contextBridge) <-> IPC <-> Electron main proces
      App.jsx              preload.cjs        handlers.cjs       main.cjs
 ```
 
-The renderer only receives `window.api.getAppInfo()`. The preload invokes `app:get-info`, and the main process returns the app name, app version, and Electron, Node and Chrome versions. The renderer has no direct Node access: context isolation and sandboxing are enabled, and Node integration is disabled. Electron files use CommonJS (`.cjs`) because the project uses `"type": "module"`.
+The renderer receives only six methods: `getAppInfo`, `saveDraft`, `loadDraft`, `clearDraft`, `saveAssessment` and `getLatestAssessment`. App info includes the app name, version, runtime versions and `dataPath`. The renderer has no direct Node access: context isolation and sandboxing are enabled, and Node integration is disabled. Electron files use CommonJS (`.cjs`) because the project uses `"type": "module"`.
+
+## Architecture: data storage
+
+The renderer never touches the file system. React calls `window.api`, the preload forwards the specific operation through IPC, and the main process uses `electron/storage.cjs` to write JSON under `app.getPath('userData')`. No assessment data is stored in localStorage, the project directory or the app bundle. The storage module has no Electron imports and accepts a base directory so tests can use a temporary folder.
+
+Files inside userData:
+
+- `draft.json`: current answers, organisation/assessor names, wizard stage and current step, `startedAt`, and `savedAt`.
+- `assessments/assessment-<timestamp>.json`: completed answers plus `id` and ISO `completedAt`.
+
+Drafts save after about 500 ms of inactivity. Storage validates payloads and size, queues operations, and writes a temporary file then renames it over the destination. Missing or corrupt drafts return `null`. Submission saves the completed assessment before clearing the draft. Failed submission keeps answers available for retry; cleanup failures are shown separately.
+
+The expected macOS location is `~/Library/Application Support/RansomReady`. The runtime is authoritative; print the actual folder in Electron DevTools with:
+
+```js
+(await window.api.getAppInfo()).dataPath
+```
+
+Verified development path on this Mac: `/Users/arnav/Library/Application Support/RansomReady` (returned by `getAppInfo().dataPath`).
+
+Electron may also create its own preferences/cache files in this folder. The app never writes assessment files into the packaged read-only `.dmg`.
+
+Run storage tests (Node built-ins only; temporary files are cleaned up):
+
+```sh
+npm run test:storage
+```
 
 ## Run locally
 
@@ -60,19 +87,23 @@ This is a local production-like run, not an installer or packaged release. A bro
 - `src/data/`: bundled domain and question JSON files.
 - `src/utils/questionBank.js`: sorted domains, questions and lookup/count helpers.
 - `scripts/validate-questions.mjs`: question bank validation using Node's built-in modules.
+- `scripts/test-storage.cjs`: storage tests with isolated temporary files.
+- `electron/storage.cjs`: validated, atomic JSON storage; `electron/ipc/handlers.cjs` registers the storage calls.
+- `src/hooks/useAssessment.js`: reducer, progress helpers and debounced auto-save.
+- `src/components/assessment/`: intro/resume, domain questions, progress, review and completion screens.
 - `src/hooks/`: the theme hook reads a saved choice or OS preference, applies `data-theme`, and safely saves the choice under `ransomready-theme`.
 - `src/components/`: shared layout, sidebar, header, theme toggle and placeholder card.
-- `src/pages/`: Home, About, the Assessment question bank preview and three feature placeholders.
+- `src/pages/`: Home, About, the Assessment wizard and three feature placeholders.
 - `src/styles/`: layout and component CSS; global reset, spacing and theme variables live in `src/index.css`.
 
 Navigation uses React state without a router. Use Tab / Shift+Tab to move through buttons and Enter / Space to activate them. The header's theme button switches light/dark mode; the choice survives restarts when localStorage is available.
 
 ## Verify the setup
 
-In the Electron window, visit all six sidebar pages and check that the active item and header agree. Home's Start Assessment button should open the temporary question bank preview with 32 questions across 8 domain cards, each showing 4 questions. Toggle the theme on that page and restart the app to check persistence. The About page should show real Electron, Node and Chrome versions. In DevTools, check:
+In the Electron window, visit all six sidebar pages and check that the active item and header agree. Home's Start Assessment button opens the wizard with 32 questions across 8 domains. Enter an organisation, answer some questions, wait for auto-save, quit Electron completely and reopen to check the Resume card, answer count and saved step. Next requires all four answers; incomplete earlier domains block jumping ahead. Radio buttons support arrow keys; Tab reaches navigation buttons and the expandable explanations. Complete all 32 answers, review/edit, then submit: the completion screen appears, a JSON file exists in userData/assessments, and draft.json is removed. Toggle the theme on that page and restart the app to check persistence. The About page should show real Electron, Node and Chrome versions. In DevTools, check:
 
 ```js
-window.api                  // { getAppInfo: ... }
+Object.keys(window.api)     // getAppInfo, saveDraft, loadDraft, clearDraft, saveAssessment, getLatestAssessment
 await window.api.getAppInfo() // App metadata and runtime versions
 window.require              // undefined
 window.process              // undefined
@@ -82,7 +113,7 @@ Confirm that the console has no errors or warnings. `npm run build` should compl
 
 ## Question bank
 
-The app imports `src/data/domains.json` and `src/data/questions.json` through Vite, so the data is bundled with the UI and is not read from disk at runtime. The Assessment page currently shows only domain summaries and question counts; answering questions starts in Phase 4.
+The app imports `src/data/domains.json` and `src/data/questions.json` through Vite, so the data is bundled with the UI and is not read from disk at runtime. The Assessment wizard uses these bundled domains and questions; Phase 4 stores answers without calculating scores.
 
 `domains.json` is an array of 8 objects:
 
@@ -104,9 +135,9 @@ The app imports `src/data/domains.json` and `src/data/questions.json` through Vi
 | `recommendation` | One actionable imperative sentence for answers other than Yes |
 | `weight` | Priority: `3` = critical, `2` = important, `1` = good practice |
 
-Every domain includes at least one critical question. Weights express this project's relative priorities; they are data for the later scoring engine and do not calculate a readiness result in Phase 3.
+Every domain includes at least one critical question. Weights express this project's relative priorities; they are data for the later scoring engine and do not calculate a readiness result in Phase 4.
 
-`src/config/answerOptions.js` defines the future answer values: Yes, fully in place = `1`; Partially in place = `0.5`; No = `0`; Not sure = `0`. Not sure counts as zero because not knowing whether protection exists is itself a gap. These values are configuration only at this stage.
+`src/config/answerOptions.js` defines the answer options and future scoring values: Yes, fully in place = `1`; Partially in place = `0.5`; No = `0`; Not sure = `0`. Not sure counts as zero because not knowing whether protection exists is itself a gap. These values are configuration only at this stage.
 
 `src/utils/questionBank.js` exports `domains` sorted by order, `questions`, `getQuestionsByDomain(domainId)`, `getQuestionById(id)`, `getDomainById(id)` and `getTotalQuestionCount()`. Unknown question or domain lookups return `undefined`; an unknown domain's question list is empty. `src/config/domainIcons.js` maps domain IDs to icons and exports a fallback icon for unknown IDs.
 
@@ -125,7 +156,7 @@ The questions are based on widely recommended good-practice guidance and are not
 - [x] Phase 1: Setup
 - [x] Phase 2: UI shell
 - [x] Phase 3: Question bank
-- [ ] Phase 4: Assessment wizard
+- [x] Phase 4: Assessment wizard
 - [ ] Phase 5: Scoring engine
 - [ ] Phase 6: Dashboard and charts
 - [ ] Phase 7: Early-sign scanner
