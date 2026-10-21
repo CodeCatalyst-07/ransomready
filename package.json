@@ -3,7 +3,7 @@
   "productName": "RansomReady",
   "version": "0.1.0",
   "private": true,
-  "description": "Ransomware readiness assessment tool — Phase 1 setup.",
+  "description": "Ransomware readiness assessment tool \u2014 Phase 1 setup.",
   "type": "module",
   "main": "electron/main.cjs",
   "engines": {
@@ -15,7 +15,8 @@
     "check:data": "node scripts/validate-questions.mjs",
     "test:storage": "node scripts/test-storage.cjs",
     "test:scoring": "node scripts/test-scoring.mjs",
-    "start": "npm run build && cross-env ELECTRON_DEV=false electron ."
+    "start": "npm run build && cross-env ELECTRON_DEV=false electron .",
+    "test:chartmath": "node scripts/test-chartmath.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.59.0",
