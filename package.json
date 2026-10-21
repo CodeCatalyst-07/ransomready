@@ -12,6 +12,7 @@
   "scripts": {
     "dev": "concurrently --kill-others --names VITE,ELECTRON \"vite\" \"wait-on --timeout 60000 http://localhost:5173 && cross-env ELECTRON_DEV=true electron .\"",
     "build": "vite build",
+    "check:data": "node scripts/validate-questions.mjs",
     "start": "npm run build && cross-env ELECTRON_DEV=false electron ."
   },
   "dependencies": {

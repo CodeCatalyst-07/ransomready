@@ -1,0 +1,10 @@
+[
+  { "id": "backup", "name": "Backup & Recovery", "description": "Keep safe copies of important data and check that they can be restored.", "order": 1 },
+  { "id": "access", "name": "Access Control & Identity", "description": "Make sure only the right people can access your data and systems.", "order": 2 },
+  { "id": "patching", "name": "Patching & Vulnerability Management", "description": "Keep track of devices and software and fix security weaknesses promptly.", "order": 3 },
+  { "id": "email", "name": "Email & Web Security", "description": "Reduce the chance of harmful messages, websites and remote connections reaching your organisation.", "order": 4 },
+  { "id": "network", "name": "Network & Endpoint Security", "description": "Protect devices and limit how an infection can spread between systems.", "order": 5 },
+  { "id": "detection", "name": "Detection & Monitoring", "description": "Watch for warning signs of an attack and make sure someone responds.", "order": 6 },
+  { "id": "incident", "name": "Incident Response & Recovery Planning", "description": "Prepare people and practical steps for containing an attack and recovering safely.", "order": 7 },
+  { "id": "awareness", "name": "Awareness & Training", "description": "Help staff recognise suspicious activity and know how to report it.", "order": 8 }
+]
