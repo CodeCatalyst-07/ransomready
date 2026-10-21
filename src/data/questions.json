@@ -1,0 +1,226 @@
+[
+  {
+    "id": "BKP-01", "domainId": "backup",
+    "text": "Does your organisation automatically back up its critical data on a regular schedule?",
+    "why": "Ransomware can make everyday files unusable. Regular backups help you recover recent work.",
+    "recommendation": "Set up automatic backups of critical data on a schedule that limits how much work your organisation could lose.",
+    "weight": 3
+  },
+  {
+    "id": "BKP-02", "domainId": "backup",
+    "text": "Does your organisation follow the 3-2-1 rule: three copies of important data including the working copy, on two types of storage, with one copy kept offsite?",
+    "why": "Copies stored in different ways and places reduce the chance that one attack or failure destroys every copy.",
+    "recommendation": "Keep three copies of important data across two types of storage, with at least one copy stored offsite.",
+    "weight": 2
+  },
+  {
+    "id": "BKP-03", "domainId": "backup",
+    "text": "Does your organisation keep at least one backup disconnected from its systems or locked against changes and deletion so ransomware cannot alter it?",
+    "why": "Ransomware may attack connected backups as well as working files. An offline or locked backup gives you a protected recovery copy.",
+    "recommendation": "Keep at least one backup offline or protected against changes and deletion, with access separated from everyday accounts.",
+    "weight": 3
+  },
+  {
+    "id": "BKP-04", "domainId": "backup",
+    "text": "Does your organisation regularly test restoring critical data from backups and record how long recovery takes?",
+    "why": "A backup is only useful if you can restore it. Timed tests help you plan for the disruption caused by ransomware.",
+    "recommendation": "Schedule regular restore tests for critical data and record whether they succeed and how long recovery takes.",
+    "weight": 3
+  },
+  {
+    "id": "ACC-01", "domainId": "access",
+    "text": "Does your organisation require a second identity check, such as an approval on a separate device, when signing in to email, remote access and administrator accounts?",
+    "why": "A stolen password can let attackers enter your systems. A second identity check makes that password harder to misuse.",
+    "recommendation": "Enable multi-factor authentication for all email, remote access and administrator accounts.",
+    "weight": 3
+  },
+  {
+    "id": "ACC-02", "domainId": "access",
+    "text": "Does your organisation give people only the access they need and use separate administrator accounts instead of using them for everyday work?",
+    "why": "Limited access reduces the damage a compromised account can cause. Separate administrator accounts help keep powerful permissions away from everyday risks.",
+    "recommendation": "Limit each person's access to their work needs and require separate administrator accounts for system changes.",
+    "weight": 3
+  },
+  {
+    "id": "ACC-03", "domainId": "access",
+    "text": "Does your organisation require strong, unique passwords for work accounts, with a password manager available to help staff manage them?",
+    "why": "Weak or reused passwords can give attackers a way in. A password manager helps staff use a different strong password for each account.",
+    "recommendation": "Require long, unique passwords for work accounts and provide a password manager to help staff store them safely.",
+    "weight": 2
+  },
+  {
+    "id": "ACC-04", "domainId": "access",
+    "text": "Does your organisation promptly remove access when someone leaves and regularly review who still needs access?",
+    "why": "Unused accounts and old permissions create extra opportunities for attackers to enter or spread ransomware.",
+    "recommendation": "Assign someone to remove leavers' access promptly and review account permissions on a regular schedule.",
+    "weight": 2
+  },
+  {
+    "id": "PAT-01", "domainId": "patching",
+    "text": "Does your organisation install security updates for operating systems and software within agreed time limits, with urgent fixes prioritised?",
+    "why": "Attackers can use known software weaknesses to enter systems and launch ransomware. Timely updates close those entry points.",
+    "recommendation": "Set and follow time limits for installing security updates, giving urgent fixes priority.",
+    "weight": 3
+  },
+  {
+    "id": "PAT-02", "domainId": "patching",
+    "text": "Does your organisation keep an up-to-date list of its devices and installed software?",
+    "why": "Forgotten devices and software can miss updates and protection. A current list helps you find gaps before attackers do.",
+    "recommendation": "Maintain a list of devices and installed software and update it whenever equipment or software changes.",
+    "weight": 2
+  },
+  {
+    "id": "PAT-03", "domainId": "patching",
+    "text": "Does your organisation regularly check its systems with a security scanning tool to find known weaknesses?",
+    "why": "Security scans can reveal missing fixes and unsafe settings that ransomware attackers may exploit.",
+    "recommendation": "Arrange regular vulnerability scans of your systems and assign someone to address the findings.",
+    "weight": 2
+  },
+  {
+    "id": "PAT-04", "domainId": "patching",
+    "text": "Does your organisation remove software that no longer receives security updates or keep it isolated from the internet and other systems?",
+    "why": "Unsupported software can leave weaknesses that will not be fixed. Isolation limits attackers' ability to reach or spread from it.",
+    "recommendation": "Replace unsupported software or isolate it from the internet and other systems until it can be replaced.",
+    "weight": 3
+  },
+  {
+    "id": "EML-01", "domainId": "email",
+    "text": "Does your organisation filter incoming email to block spam and messages that try to trick staff into sharing passwords or opening harmful content?",
+    "why": "Deceptive emails can deliver ransomware or steal the account details used to launch an attack.",
+    "recommendation": "Enable spam and phishing filtering for every work email account and keep the filtering settings up to date.",
+    "weight": 3
+  },
+  {
+    "id": "EML-02", "domainId": "email",
+    "text": "Does your organisation block dangerous email attachments and prevent files from the internet from running built-in commands called macros?",
+    "why": "Harmful attachments and document macros can run instructions that install ransomware when a file is opened.",
+    "recommendation": "Configure email and document settings to block dangerous attachment types and macros in files from the internet.",
+    "weight": 3
+  },
+  {
+    "id": "EML-03", "domainId": "email",
+    "text": "Does your organisation use a web filter to stop staff devices from connecting to known harmful websites?",
+    "why": "Harmful websites can steal passwords or deliver ransomware. Web filtering can stop some of these connections before harm occurs.",
+    "recommendation": "Enable web or website-address filtering on staff devices to block known harmful sites.",
+    "weight": 2
+  },
+  {
+    "id": "EML-04", "domainId": "email",
+    "text": "Are all remote desktop connections to your organisation's computers either disabled or protected behind a secure access gateway, rather than directly reachable from the internet?",
+    "why": "Attackers look for exposed remote desktop connections to break into computers and deploy ransomware.",
+    "recommendation": "Disable unused remote desktop access and place any required connections behind a secure access gateway with a second identity check.",
+    "weight": 3
+  },
+  {
+    "id": "NET-01", "domainId": "network",
+    "text": "Does your organisation use a firewall that blocks network connections unless they have been explicitly allowed for work?",
+    "why": "Blocking connections by default reduces the routes attackers can use to enter systems or spread ransomware.",
+    "recommendation": "Configure the firewall to deny connections by default and allow only those needed for work.",
+    "weight": 3
+  },
+  {
+    "id": "NET-02", "domainId": "network",
+    "text": "Are your organisation's critical systems kept in separate network areas with access between areas limited to what is needed?",
+    "why": "Separating network areas can limit how far ransomware spreads from an infected device.",
+    "recommendation": "Separate critical systems from everyday devices and guest networks, allowing only necessary connections between them.",
+    "weight": 3
+  },
+  {
+    "id": "NET-03", "domainId": "network",
+    "text": "Are all your organisation's computers and servers protected by active, up-to-date security software that detects harmful programs?",
+    "why": "Device protection can detect and stop harmful software before it damages files. Unprotected devices can provide a starting point for an attack.",
+    "recommendation": "Install and maintain active antivirus or endpoint detection protection on every computer and server.",
+    "weight": 3
+  },
+  {
+    "id": "NET-04", "domainId": "network",
+    "text": "Are unused system services and outdated ways of sharing files or connecting devices disabled across your organisation?",
+    "why": "Unneeded services and older connection methods can give attackers extra routes to enter systems or spread ransomware.",
+    "recommendation": "Have your IT support disable unused services and outdated file-sharing or connection methods on devices and servers.",
+    "weight": 2
+  },
+  {
+    "id": "DET-01", "domainId": "detection",
+    "text": "Does your organisation collect important system and security activity records in one central place for review?",
+    "why": "Central records help connect warning signs across devices and investigate how a ransomware attack started.",
+    "recommendation": "Collect important device, sign-in and security activity records in a central location with restricted access.",
+    "weight": 2
+  },
+  {
+    "id": "DET-02", "domainId": "detection",
+    "text": "Does your organisation receive alerts for unusual activity, such as many files being renamed or changed very quickly?",
+    "why": "Rapid changes to many files can be a sign of ransomware. An early alert can help you act before more data is affected.",
+    "recommendation": "Set up alerts for unusual activity, including rapid changes or renaming of large numbers of files.",
+    "weight": 3
+  },
+  {
+    "id": "DET-03", "domainId": "detection",
+    "text": "Does your organisation monitor repeated failed sign-ins and administrator activity outside normal working hours?",
+    "why": "Repeated sign-in failures may signal an attempted break-in. Unexpected administrator activity can indicate that an attacker has gained powerful access.",
+    "recommendation": "Monitor repeated failed sign-ins and administrator activity outside expected hours and investigate unusual patterns.",
+    "weight": 2
+  },
+  {
+    "id": "DET-04", "domainId": "detection",
+    "text": "Does your organisation have a named person or team responsible for reviewing security alerts and arranging a response?",
+    "why": "Alerts only help if someone acts on them. Clear responsibility reduces delays while ransomware spreads.",
+    "recommendation": "Assign a person or team to review security alerts and arrange backup cover when they are unavailable.",
+    "weight": 3
+  },
+  {
+    "id": "INC-01", "domainId": "incident",
+    "text": "Does your organisation have a written plan describing what to do during a ransomware attack and how to recover safely?",
+    "why": "A written plan helps people act quickly under pressure and avoid decisions that could worsen an attack.",
+    "recommendation": "Write a ransomware response plan covering containment, communication and safe recovery of essential services.",
+    "weight": 3
+  },
+  {
+    "id": "INC-02", "domainId": "incident",
+    "text": "Does your organisation keep an up-to-date list of response roles and contacts, including who reports an incident to CERT-In in India and how to do so?",
+    "why": "Clear roles and reachable contacts reduce confusion during an attack. A known reporting route helps the responsible person contact CERT-In promptly.",
+    "recommendation": "Maintain a response contact and roles list that assigns CERT-In reporting and records the reporting steps from CERT-In's official website.",
+    "weight": 2
+  },
+  {
+    "id": "INC-03", "domainId": "incident",
+    "text": "Does your organisation have agreed steps and authorised staff to quickly disconnect an infected device or system from the network?",
+    "why": "Quickly isolating infected systems can limit ransomware spreading to shared files and other devices.",
+    "recommendation": "Define who can isolate infected systems and document how to disconnect them quickly from wired and wireless networks.",
+    "weight": 3
+  },
+  {
+    "id": "INC-04", "domainId": "incident",
+    "text": "Does your organisation practise its ransomware response through drills or discussion exercises and keep an offline copy of the plan?",
+    "why": "Practice reveals gaps before a real attack. An offline copy keeps instructions available if systems are locked or disconnected.",
+    "recommendation": "Schedule ransomware response exercises and keep an up-to-date offline copy of the plan where response staff can reach it.",
+    "weight": 2
+  },
+  {
+    "id": "AWR-01", "domainId": "awareness",
+    "text": "Does your organisation give all staff regular training on safe email, passwords and recognising ransomware risks?",
+    "why": "Staff who recognise common warning signs are better prepared to avoid actions that could let ransomware in.",
+    "recommendation": "Provide security awareness training when staff join and repeat it regularly with practical ransomware examples.",
+    "weight": 3
+  },
+  {
+    "id": "AWR-02", "domainId": "awareness",
+    "text": "Does your organisation run safe practice exercises using simulated deceptive emails and explain the warning signs afterwards?",
+    "why": "Practice emails help staff learn to recognise phishing attempts before a real message leads to stolen passwords or ransomware.",
+    "recommendation": "Run safe phishing simulations and follow them with supportive explanations of how to spot and report suspicious messages.",
+    "weight": 1
+  },
+  {
+    "id": "AWR-03", "domainId": "awareness",
+    "text": "Does your organisation give staff a simple, clearly explained way to report suspicious emails quickly?",
+    "why": "Quick reports let the organisation investigate a harmful message and warn others before more people open it.",
+    "recommendation": "Provide one easy reporting route for suspicious emails and explain it to every staff member.",
+    "weight": 2
+  },
+  {
+    "id": "AWR-04", "domainId": "awareness",
+    "text": "Does your organisation give IT support and administrator staff specific training on recognising ransomware warning signs and taking the first response steps?",
+    "why": "Staff with system access need to recognise technical warning signs and act quickly to contain a possible ransomware attack.",
+    "recommendation": "Train IT support and administrator staff to recognise ransomware signs and follow the organisation's containment and reporting steps.",
+    "weight": 2
+  }
+]
