@@ -95,7 +95,7 @@ export default function AssessmentPage() {
       </>}
       {state.stage === 'review' && <ReviewScreen state={state} allComplete={allComplete} busy={busy} error={error}
         onEdit={(step) => dispatch({ type: 'GO_TO_STEP', step })} onBack={() => dispatch({ type: 'BACK' })} onSubmit={submit} />}
-      {state.stage === 'completed' && <CompletedScreen onReset={reset} notice={notice} />}
+      {state.stage === 'completed' && <CompletedScreen answers={state.answers} onReset={reset} notice={notice} />}
     </div>
   );
 }
