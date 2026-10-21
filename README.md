@@ -2,7 +2,7 @@
 
 **Assess. Detect. Improve.**
 
-RansomReady is a college project addressing NTRO problem statement 317: a Ransomware Readiness Assessment tool. Ransomware can disrupt an organisation’s operations and access to critical data. The project aims to help organisations understand their preparedness, identify gaps, and prioritise improvements. Phases 1 and 2 provide the secure desktop foundation, navigation shell, Home and About pages, and placeholders for future features. Phase 3 adds a bundled question bank. Phase 4 adds the assessment wizard, automatic draft saving, resume support, review and completed-answer storage. Scoring, charts, scanner and reports belong to later phases.
+RansomReady is a college project addressing NTRO problem statement 317: a Ransomware Readiness Assessment tool. Ransomware can disrupt an organisation’s operations and access to critical data. The project aims to help organisations understand their preparedness, identify gaps, and prioritise improvements. Phases 1 and 2 provide the secure desktop foundation, navigation shell, Home and About pages, and placeholders for future features. Phase 3 adds a bundled question bank. Phase 4 adds the assessment wizard, automatic draft saving, resume support, review and completed-answer storage. Phase 5 adds scoring, maturity levels, prioritised recommendations and a temporary completion summary. The dashboard, charts, scanner and reports belong to later phases.
 
 ## Tech stack
 
@@ -86,6 +86,10 @@ This is a local production-like run, not an installer or packaged release. A bro
 - `src/config/`: navigation, answer options and domain icon mappings. Register a new page in the navigation list.
 - `src/data/`: bundled domain and question JSON files.
 - `src/utils/questionBank.js`: sorted domains, questions and lookup/count helpers.
+- `src/config/maturityLevels.js`: five maturity levels and their shared lookup helper.
+- `src/utils/scoring.js`: pure scoring, critical-gap cap and recommendation functions; no UI or bundled data imports.
+- `src/utils/scoreAssessment.js`: connects the pure engine to the real question bank for the UI.
+- `scripts/test-scoring.mjs`: scoring tests using Node built-ins.
 - `scripts/validate-questions.mjs`: question bank validation using Node's built-in modules.
 - `scripts/test-storage.cjs`: storage tests with isolated temporary files.
 - `electron/storage.cjs`: validated, atomic JSON storage; `electron/ipc/handlers.cjs` registers the storage calls.
@@ -100,7 +104,7 @@ Navigation uses React state without a router. Use Tab / Shift+Tab to move throug
 
 ## Verify the setup
 
-In the Electron window, visit all six sidebar pages and check that the active item and header agree. Home's Start Assessment button opens the wizard with 32 questions across 8 domains. Enter an organisation, answer some questions, wait for auto-save, quit Electron completely and reopen to check the Resume card, answer count and saved step. Next requires all four answers; incomplete earlier domains block jumping ahead. Radio buttons support arrow keys; Tab reaches navigation buttons and the expandable explanations. Complete all 32 answers, review/edit, then submit: the completion screen appears, a JSON file exists in userData/assessments, and draft.json is removed. Toggle the theme on that page and restart the app to check persistence. The About page should show real Electron, Node and Chrome versions. In DevTools, check:
+In the Electron window, visit all six sidebar pages and check that the active item and header agree. Home's Start Assessment button opens the wizard with 32 questions across 8 domains. Enter an organisation, answer some questions, wait for auto-save, quit Electron completely and reopen to check the Resume card, answer count and saved step. Next requires all four answers; incomplete earlier domains block jumping ahead. Radio buttons support arrow keys; Tab reaches navigation buttons and the expandable explanations. Complete all 32 answers, review/edit, then submit: the completion screen shows the overall percent, maturity badge, critical-gap count and up to five recommendations, a JSON file containing answers and metadata (no scores) exists in userData/assessments, and draft.json is removed. All Yes should give 100% / Level 5 (Resilient); all No should give 0% / Level 1 (Initial). Toggle the theme on that page and restart the app to check persistence. The About page should show real Electron, Node and Chrome versions. In DevTools, check:
 
 ```js
 Object.keys(window.api)     // getAppInfo, saveDraft, loadDraft, clearDraft, saveAssessment, getLatestAssessment
@@ -113,7 +117,7 @@ Confirm that the console has no errors or warnings. `npm run build` should compl
 
 ## Question bank
 
-The app imports `src/data/domains.json` and `src/data/questions.json` through Vite, so the data is bundled with the UI and is not read from disk at runtime. The Assessment wizard uses these bundled domains and questions; Phase 4 stores answers without calculating scores.
+The app imports `src/data/domains.json` and `src/data/questions.json` through Vite, so the data is bundled with the UI and is not read from disk at runtime. The Assessment wizard uses these bundled domains and questions; Completed files store answers only; Phase 5 calculates scores from those answers whenever results are needed.
 
 `domains.json` is an array of 8 objects:
 
@@ -135,9 +139,9 @@ The app imports `src/data/domains.json` and `src/data/questions.json` through Vi
 | `recommendation` | One actionable imperative sentence for answers other than Yes |
 | `weight` | Priority: `3` = critical, `2` = important, `1` = good practice |
 
-Every domain includes at least one critical question. Weights express this project's relative priorities; they are data for the later scoring engine and do not calculate a readiness result in Phase 4.
+Every domain includes at least one critical question. Weights express this project's relative priorities and feed the scoring engine.
 
-`src/config/answerOptions.js` defines the answer options and future scoring values: Yes, fully in place = `1`; Partially in place = `0.5`; No = `0`; Not sure = `0`. Not sure counts as zero because not knowing whether protection exists is itself a gap. These values are configuration only at this stage.
+`src/config/answerOptions.js` defines the answer options and scoring values: Yes, fully in place = `1`; Partially in place = `0.5`; No = `0`; Not sure = `0`. Not sure counts as zero because not knowing whether protection exists is itself a gap. The scoring engine reads these values from configuration.
 
 `src/utils/questionBank.js` exports `domains` sorted by order, `questions`, `getQuestionsByDomain(domainId)`, `getQuestionById(id)`, `getDomainById(id)` and `getTotalQuestionCount()`. Unknown question or domain lookups return `undefined`; an unknown domain's question list is empty. `src/config/domainIcons.js` maps domain IDs to icons and exports a fallback icon for unknown IDs.
 
@@ -151,13 +155,39 @@ The validator checks the domain schema and IDs, unique question IDs and prefixes
 
 The questions are based on widely recommended good-practice guidance and are not a formal compliance certification. Background references include the [CISA #StopRansomware Guide](https://www.cisa.gov/stopransomware/ransomware-guide) and [CERT-In's official incident reporting contact information](https://www.cert-in.org.in/s2cMainServlet?pageid=CONTACTUS); organisations should consult CERT-In's current official reporting steps when maintaining their response contacts.
 
+## Scoring methodology
+
+Question points = weight × answer score; maximum points = weight. Weights are **3 = critical**, **2 = important**, **1 = good practice**. Answer scores are **Yes = 1**, **Partial = 0.5**, **No = 0**, **Not sure = 0**.
+
+Domain percent = (domain points / domain maximum points) × 100. Overall percent = (total points / total maximum points) × 100 across all questions, rather than an average of domain percents. Each percent is rounded once to one decimal place with `Math.round(value * 10) / 10`; that rounded number is also used for level lookup.
+
+| Level | Name | Percent range |
+| --- | --- | --- |
+| 1 | Initial | 0–24.9 |
+| 2 | Developing | 25–49.9 |
+| 3 | Defined | 50–69.9 |
+| 4 | Managed | 70–84.9 |
+| 5 | Resilient | 85–100 |
+
+A critical gap is a weight-3 question answered No or Not sure. With three or more critical gaps, the overall level cannot exceed Level 2 (Developing). The percent stays unchanged and the summary explains any applied cap. Individual domain levels are never capped.
+
+Every answer other than Yes produces a recommendation. Its priority score is `weight × (1 - answer score)`. Recommendations sort by this score descending, then weight descending, then domain order ascending, then question ID ascending. Labels come from weight: 3 = High, 2 = Medium, 1 = Low. The temporary completion summary shows the first five; the full dashboard arrives in Phase 6.
+
+Scores are never stored in saved files. Only answers are stored as assessment responses, alongside the existing metadata, so assessments can be re-scored when the methodology changes. The weights and level thresholds are design choices made for this project, not an official industry standard.
+
+Run the scoring tests without Electron or a bundler:
+
+```sh
+npm run test:scoring
+```
+
 ## Roadmap
 
 - [x] Phase 1: Setup
 - [x] Phase 2: UI shell
 - [x] Phase 3: Question bank
 - [x] Phase 4: Assessment wizard
-- [ ] Phase 5: Scoring engine
+- [x] Phase 5: Scoring engine
 - [ ] Phase 6: Dashboard and charts
 - [ ] Phase 7: Early-sign scanner
 - [ ] Phase 8: Reports, history and polish
