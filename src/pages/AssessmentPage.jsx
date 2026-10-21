@@ -9,7 +9,7 @@ import ReviewScreen from '../components/assessment/ReviewScreen.jsx';
 import CompletedScreen from '../components/assessment/CompletedScreen.jsx';
 import '../styles/assessment.css';
 
-export default function AssessmentPage() {
+export default function AssessmentPage({ navigate }) {
   const assessment = useAssessment();
   const { state, dispatch, allComplete, isDomainComplete } = assessment;
   const [busy, setBusy] = useState(false);
@@ -95,7 +95,7 @@ export default function AssessmentPage() {
       </>}
       {state.stage === 'review' && <ReviewScreen state={state} allComplete={allComplete} busy={busy} error={error}
         onEdit={(step) => dispatch({ type: 'GO_TO_STEP', step })} onBack={() => dispatch({ type: 'BACK' })} onSubmit={submit} />}
-      {state.stage === 'completed' && <CompletedScreen answers={state.answers} onReset={reset} notice={notice} />}
+      {state.stage === 'completed' && <CompletedScreen answers={state.answers} onReset={reset} notice={notice} navigate={navigate} />}
     </div>
   );
 }

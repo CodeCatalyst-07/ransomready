@@ -43,13 +43,3 @@
 .review-table th, .review-table td { border-bottom: 1px solid var(--border); padding: var(--space-3) var(--space-2); }
 .review-table thead { color: var(--muted); }
 .review-table tbody th { font-weight: 500; }
-
-.score-summary { display: grid; gap: var(--space-4); }
-.score-percent { font-size: clamp(40px, 8vw, 64px); font-weight: 700; line-height: 1.1; }
-.score-badge { display: inline-block; border: 1px solid currentColor; border-radius: var(--radius-sm); padding: var(--space-1) var(--space-2); font-size: 14px; font-weight: 600; }
-.score-badge.tone-danger, .score-cap { color: var(--danger); }
-.score-badge.tone-warning { color: var(--warning); }
-.score-badge.tone-success { color: var(--success); }
-.score-recommendations { margin: 0; padding-left: var(--space-5); }
-.score-recommendations li { padding: var(--space-3) 0; border-bottom: 1px solid var(--border); }
-.score-recommendations li p { margin-top: var(--space-2); }
