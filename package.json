@@ -14,6 +14,7 @@
     "build": "vite build",
     "check:data": "node scripts/validate-questions.mjs",
     "test:storage": "node scripts/test-storage.cjs",
+    "test:scoring": "node scripts/test-scoring.mjs",
     "start": "npm run build && cross-env ELECTRON_DEV=false electron ."
   },
   "dependencies": {
