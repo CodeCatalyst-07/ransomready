@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('scanner:progress', listener);
     return () => ipcRenderer.removeListener('scanner:progress', listener);
   },
+  exportReportPdf: (payload) => ipcRenderer.invoke('report:export-pdf', payload),
   getAppInfo: () => ipcRenderer.invoke('app:get-info'),
   saveDraft: (draft) => ipcRenderer.invoke('assessment:save-draft', draft),
   loadDraft: () => ipcRenderer.invoke('assessment:load-draft'),

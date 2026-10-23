@@ -1,6 +1,7 @@
 const { app, ipcMain, dialog, BrowserWindow, shell } = require('electron');
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { exportReportPdf } = require('../report/pdfExport.cjs');
 const { scanFolder } = require('../scanner/scanner.cjs');
 let selectedFolder = null;
 let lastScannedRoot = null;
@@ -20,6 +21,18 @@ function registerIpcHandlers() {
       chrome: process.versions.chrome,
     },
   }));
+  ipcMain.handle('report:export-pdf', async (event, payload) => {
+    try {
+      if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        throw new Error('A report payload is required.');
+      }
+      const data = await exportReportPdf({
+        html: payload.html, suggestedName: payload.suggestedName,
+        parentWindow: BrowserWindow.fromWebContents(event.sender),
+      });
+      return { ok: true, data };
+    } catch (error) { return { ok: false, error: error.message }; }
+  });
   const scannerOperations = {
     'scanner:choose-folder': async (event) => {
       if (scanRunning) throw new Error('Wait for the current scan to finish before choosing another folder.');
