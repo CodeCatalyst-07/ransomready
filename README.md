@@ -1,61 +1,113 @@
 # RansomReady
 
-**Assess. Detect. Improve.**
+**Assess. Detect. Improve.** A local desktop ransomware readiness self-assessment.
 
-RansomReady is a college project addressing NTRO problem statement 317: a Ransomware Readiness Assessment tool. Ransomware can disrupt an organisation’s operations and access to critical data. The project aims to help organisations understand their preparedness, identify gaps, and prioritise improvements. Phases 1 and 2 provide the secure desktop foundation, navigation shell, Home and About pages, and placeholders for future features. Phase 3 adds a bundled question bank. Phase 4 adds the assessment wizard, automatic draft saving, resume support, review and completed-answer storage. Phase 5 adds scoring, maturity levels and prioritised recommendations. Phase 6 adds the results dashboard and SVG charts. The scanner, reports and history belong to later phases.
+RansomReady is a college project addressing **NTRO problem statement 317**, a Ransomware Readiness Assessment tool. Ransomware can interrupt an organisation’s work and access to important data. This Electron + React app helps users review their current practices, identify gaps and prioritise improvements, with a separate read-only check for possible warning signs in file names. It uses plain JavaScript, plain CSS and local JSON storage, without a database or external service.
 
-## Tech stack
+## Features
 
-- Plain JavaScript and React for the renderer
-- Vite with the React plugin for development and UI builds
-- Electron for the desktop shell
-- Plain CSS with an OS-aware, persistent light/dark theme toggle
-- lucide-react for icons
-- concurrently, wait-on and cross-env for portable development scripts
+- Assessment: 32 questions across 8 domains, explanations, review, automatic draft saving and resume.
+- Scoring: weighted answers, five maturity levels, critical-gap cap and prioritised recommendations. Scores are recalculated from saved answers, never stored.
+- Dashboard: overall score, SVG radar chart, domain bars, answer counts, weakest areas and recommendation filters.
+- Early-sign scanner: native folder selection, progress, cancellation, severity filters, Show in Finder and the latest saved scan. Checks names and metadata only.
+- PDF report: export from Dashboard through the native save dialog, using Electron’s built-in `printToPDF`. Includes every recommendation and the latest scan when available; scan findings are limited to 25 in the report. Successful export reveals the PDF in Finder.
+- Local-only storage: answers and the latest scan stay in Electron’s `userData` folder. The theme preference alone uses localStorage.
+- Page error recovery: a friendly error card with Try again and Go to Home actions.
 
-electron-builder packages the desktop app for macOS. No database, external API integration or custom native modules are used.
+PDF export is on Dashboard. The existing Reports sidebar page remains a placeholder; no report or assessment history browser is implemented.
 
-The npm override selects a patched `shell-quote` version for concurrently's development scripts; see [GHSA-pqg4-j6r4-53mv](https://github.com/advisories/GHSA-pqg4-j6r4-53mv).
+## Screenshots
+
+**Placeholders — replace these with your own screenshots before submission:**
+
+- [ ] Dashboard screenshot
+- [ ] Assessment wizard screenshot
+- [ ] Early-sign scanner screenshot
+- [ ] Exported PDF report screenshot
 
 ## Architecture
 
 ```text
-React UI (renderer) <-> preload (contextBridge) <-> IPC <-> Electron main process
-     App.jsx              preload.cjs        handlers.cjs       main.cjs
+React UI (renderer)
+        <-> preload.cjs (contextBridge, 13 named methods)
+        <-> IPC (electron/ipc/handlers.cjs)
+        <-> Electron main process
+              |-- storage.cjs        <-> userData/ JSON files
+              |-- scanner/           --> selected folder (read-only)
+              |-- report/pdfExport.cjs
+                    --> hidden window (JavaScript disabled)
+                    --> printToPDF --> native-dialog-selected PDF destination
 ```
 
-The renderer receives only six methods: `getAppInfo`, `saveDraft`, `loadDraft`, `clearDraft`, `saveAssessment` and `getLatestAssessment`. App info includes the app name, version, runtime versions and `dataPath`. The renderer has no direct Node access: context isolation and sandboxing are enabled, and Node integration is disabled. Electron files use CommonJS (`.cjs`) because the project uses `"type": "module"`.
+**Data flow:** answer questions → save draft/completed answers through the preload and IPC → main-process storage validates and writes JSON → `scoreAssessment` recalculates results in the renderer → Dashboard displays them → the pure `buildReportHtml` creates a standalone escaped HTML document → main process asks where to save → an isolated hidden Electron window prints A4 PDF → Finder reveals the saved file. Scan results load independently; an unavailable scan does not prevent the dashboard or report from working.
 
-## Architecture: data storage
+The storage module accepts its base directory, so Node tests use isolated temporary folders. Writes are queued and atomic: write a temporary file, then rename it over the destination. Submission saves a completed assessment before clearing the draft.
 
-The renderer never touches the file system. React calls `window.api`, the preload forwards the specific operation through IPC, and the main process uses `electron/storage.cjs` to write JSON under `app.getPath('userData')`. No assessment data is stored in localStorage, the project directory or the app bundle. The storage module has no Electron imports and accepts a base directory so tests can use a temporary folder.
+Files under `app.getPath('userData')`:
 
-Files inside userData:
+- `draft.json`: answers, organisation/assessor, wizard position and timestamps.
+- `assessments/assessment-<timestamp>.json`: completed answers and metadata, with no stored scores. The UI uses only the latest completed assessment.
+- `latest-scan.json`: latest scan, replacing the previous scan; no scan history.
 
-- `draft.json`: current answers, organisation/assessor names, wizard stage and current step, `startedAt`, and `savedAt`.
-- `assessments/assessment-<timestamp>.json`: completed answers plus `id` and ISO `completedAt`.
+On macOS this is normally `~/Library/Application Support/RansomReady`. The About page shows the actual path, also available through `(await window.api.getAppInfo()).dataPath` in Electron DevTools. Electron may create its own cache/preferences there too.
 
-Drafts save after about 500 ms of inactivity. Storage validates payloads and size, queues operations, and writes a temporary file then renames it over the destination. Missing or corrupt drafts return `null`. Submission saves the completed assessment before clearing the draft. Failed submission keeps answers available for retry; cleanup failures are shown separately.
+## Security design
 
-The expected macOS location is `~/Library/Application Support/RansomReady`. The runtime is authoritative; print the actual folder in Electron DevTools with:
+- Main window: `contextIsolation: true`, `sandbox: true`, `nodeIntegration: false`.
+- The renderer has no Node modules or raw IPC access; `window.require` and `window.process` are undefined.
+- Strict CSP in `index.html`; new windows and page navigation are denied.
+- Preload exposes exactly 13 named methods: `getAppInfo`, `saveDraft`, `loadDraft`, `clearDraft`, `saveAssessment`, `getLatestAssessment`, `chooseScanFolder`, `startScan`, `cancelScan`, `revealInFolder`, `getLatestScan`, `onScanProgress`, `exportReportPdf`.
+- The renderer never supplies destination file paths or the scanner’s root path. Native dialogs in the main process choose them. Show in Finder accepts only a validated relative finding path inside the scanned root.
+- The scanner is read-only: it lists directories and checks metadata, never opens file contents or intentionally follows symlinks, and never changes scanned files. Symbolic links are skipped, with containment checked again before revealing a finding.
+- Report strings are HTML-escaped. Report CSP is `default-src 'none'; style-src 'unsafe-inline'; img-src data:`; no scripts or external resources are included.
+- The hidden PDF window has JavaScript disabled, isolation/sandbox enabled, Node disabled, no preload, and denies navigation/new windows. Temporary HTML is removed and the window destroyed after success or failure.
+- App data never leaves the computer through RansomReady. There are no network uploads, telemetry or external analysis services. PDF exports contain organisation and scan information; users control where they save or share them. Local JSON and PDFs are not encrypted by the app.
 
-```js
-(await window.api.getAppInfo()).dataPath
+## Scoring methodology
+
+Question weights are **3 = critical**, **2 = important**, **1 = good practice**. Answer values are **Yes = 1**, **Partial = 0.5**, **No = 0**, **Not sure = 0**. Points = weight × answer value. Overall percent = total points / total possible points × 100; each domain uses its own points and maximum. Percentages are rounded once to one decimal place before level lookup; overall is not an average of rounded domain percentages.
+
+| Level | Name | Percent |
+| --- | --- | --- |
+| 1 | Initial | 0–24.9 |
+| 2 | Developing | 25–49.9 |
+| 3 | Defined | 50–69.9 |
+| 4 | Managed | 70–84.9 |
+| 5 | Resilient | 85–100 |
+
+A weight-3 question answered No or Not sure is a critical gap. Three or more critical gaps cap the overall level at Level 2 (Developing), without changing the percentage. Domain levels are not capped.
+
+Each non-Yes answer creates a recommendation. Priority score is `weight × (1 - answer value)`, sorted descending, then weight descending, domain order ascending and question ID ascending. Weight gives the High / Medium / Low label. The PDF groups recommendations by that label and preserves the engine’s order within each group. The dashboard supports filters and Show all.
+
+Implementation details: [scoring engine](src/utils/scoring.js), [maturity levels](src/config/maturityLevels.js), [answer values](src/config/answerOptions.js), and [question bank](src/data/questions.json). The PDF’s Methodology and limits section repeats the scoring rules. The questions reflect widely recommended good practice; weights and thresholds are this project’s design choices, not an official standard.
+
+## Project structure
+
+```text
+electron/
+  main.cjs                 Secure app window and lifecycle
+  preload.cjs              Named contextBridge operations
+  ipc/handlers.cjs         IPC validation and error responses
+  storage.cjs              Local atomic JSON storage
+  scanner/                 Read-only scanner and sample indicator rules
+  report/pdfExport.cjs     Native save dialog and isolated PDF printing
+src/
+  App.jsx                  Page navigation and error boundary
+  components/              Layout, ErrorBoundary, assessment/dashboard/scanner UI
+  pages/                   Home, Assessment, Dashboard, Scanner, Reports, About
+  config/                  Navigation, answer options and maturity levels
+  data/                    Eight domains and 32 questions
+  hooks/                   Assessment state/save-resume and theme
+  utils/                   Question helpers, scoring, chart maths, report HTML
+  styles/                  Layout and component styles
+scripts/                   Data validation, Node tests and harmless scan demo
+index.html                 Renderer entry point and CSP
+electron-builder.yml       Existing macOS packaging configuration
 ```
 
-Verified development path on this Mac: `/Users/arnav/Library/Application Support/RansomReady` (returned by `getAppInfo().dataPath`).
+## How to run
 
-Electron may also create its own preferences/cache files in this folder. The app never writes assessment files into the packaged read-only `.dmg`.
-
-Run storage tests (Node built-ins only; temporary files are cleaned up):
-
-```sh
-npm run test:storage
-```
-
-## Run locally
-
-Install a current Node.js LTS release (22.12 or newer) and Git first. The initial dependency installation needs internet access to download Electron and npm packages.
+Use Node.js **22.12.0 or newer** and npm. Initial dependency installation requires internet access.
 
 ```sh
 git clone https://github.com/CodeCatalyst-07/ransomready.git
@@ -64,203 +116,80 @@ npm install
 npm run dev
 ```
 
-Vite starts on `http://localhost:5173`. Electron waits for Vite, then opens the app and DevTools. Keep this terminal running. Stop development with Ctrl+C; on macOS this also stops Electron if closing its window leaves it running. Port 5173 must be available. React edits refresh automatically; restart `npm run dev` after changing Electron or preload files.
-
-Build the UI:
+Vite uses `http://localhost:5173`; Electron waits for it and opens DevTools. Keep port 5173 free. React edits refresh automatically; restart the app after Electron/preload changes. Stop with Ctrl+C to end both processes. A browser preview has no desktop bridge, storage or export access.
 
 ```sh
-npm run build
+npm run build  # Build renderer into dist/
+npm start      # Build and open the desktop app using dist/index.html
 ```
 
-Build and open the desktop app using `dist/index.html`:
+## How to test
+
+Node tests use built-in modules; no additional test or PDF dependencies are required.
 
 ```sh
-npm start
+npm run check:data       # Question-bank schema and consistency
+npm run test:storage     # Validation, atomic storage and failure handling
+npm run test:scoring     # Percentages, levels, cap and recommendation ordering
+npm run test:chartmath   # SVG geometry, filtering and weakest-domain helpers
+npm run test:scanner     # Name rules, traversal, limits, cancellation, symlinks
+npm run test:report      # HTML escaping, CSP, scores, domains and optional scan
+npm run build            # Production renderer build
 ```
 
-This is a local production-like run, not an installer or packaged release. A browser preview at the Vite URL works too; its About page displays a friendly runtime message because Electron's bridge is only available in the desktop window.
+For a harmless scanner demo, run `npm run demo:scan-folder` and choose the printed temporary folder in Scanner. Expected demo counts are 2 High, 2 Medium, 1 Low across 9 files.
+
+Manual desktop checks:
+
+1. Complete an assessment, checking draft resume, review and submission. All Yes gives 100% / Level 5; all No gives 0% / Level 1.
+2. Open Dashboard and export a PDF. Choose a location, open the saved PDF and inspect every section, chart and recommendation. Repeat with no saved scan and with a latest scan; only the latter includes the scan section. Cancel the save dialog and confirm no success/error message or file is produced.
+3. Confirm export is disabled while busy; failures display a dismissible error and success displays a dismissible status message that clears after a few seconds.
+4. For development verification only, temporarily throw an error while rendering a page. Confirm the fallback and navigation work, remove the throw, and check Try again. Never leave the throw in submitted code.
+5. Check both themes, keyboard focus, Tab/Shift+Tab and Enter/Space. Inspect the console for unexpected errors/warnings. The deliberate boundary test should log its error.
+6. In Electron DevTools, verify `Object.keys(window.api).length === 13`, `window.require === undefined`, and `window.process === undefined`.
 
 ## Packaging for macOS
 
-Run these commands on a Mac after `npm install`. Replace the `author` placeholder in `package.json` with your name before submission.
+Run on a Mac after `npm install`. Set the author in `package.json` before submission.
 
 ```sh
-# Build an unpacked .app for smoke testing on this Mac
-npm run pack
-
-# Build one universal .dmg for Intel and Apple Silicon Macs
-npm run dist:mac
-
-# Architecture-specific fallbacks if the universal build fails or is too large
-npm run dist:mac:arm64
-npm run dist:mac:x64
+npm run pack           # Unpacked .app for smoke testing on this Mac
+npm run dist:mac       # Universal DMG for Intel and Apple Silicon
+npm run dist:mac:arm64 # Apple Silicon fallback
+npm run dist:mac:x64   # Intel fallback
 ```
 
-Output appears in `release/`. The unpacked app is inside an architecture-specific subfolder; disk images are named `RansomReady-0.1.0-<arch>.dmg`. The default disk image layout includes the app and an Applications folder shortcut. Open the disk image and drag RansomReady into Applications.
+Output is in `release/`; unpacked apps are in architecture-specific subfolders. Disk images use `RansomReady-0.1.0-<arch>.dmg`. Open the DMG and drag RansomReady to Applications using the shortcut.
 
-The trial .dmg is **not code-signed with an Apple Developer certificate or notarized** (no paid Apple developer account), so macOS shows an “unidentified developer” warning on first open. The app uses a local ad-hoc signature for Apple Silicon compatibility; this does not verify the developer's identity. For this trusted project build, right-click `/Applications/RansomReady.app`, choose **Open**, then confirm **Open**. Alternatively, run this in Terminal, then open the app:
+The app is **not signed with an Apple Developer certificate or notarized**. The existing configuration uses a local ad-hoc signature for Apple Silicon compatibility; this does not verify the developer’s identity. macOS may show an “unidentified developer” warning. For a trusted project build, right-click `/Applications/RansomReady.app`, choose **Open**, then confirm **Open**. Alternatively, for this trusted copy only:
 
 ```sh
 xattr -cr /Applications/RansomReady.app
 ```
 
-The .dmg is not stored in git; share it through GitHub Releases or a download link.
+Then open the app. Keep DMGs out of the repository; distribute them through a release/download link. Assessment files live in writable `userData`, outside the app bundle and DMG.
 
-## Project structure
+## Limitations and honest notes
 
-- `src/App.jsx`: holds the current page state and looks up its component.
-- `src/config/`: navigation, answer options and domain icon mappings. Register a new page in the navigation list.
-- `src/data/`: bundled domain and question JSON files.
-- `src/utils/questionBank.js`: sorted domains, questions and lookup/count helpers.
-- `src/config/maturityLevels.js`: five maturity levels and their shared lookup helper.
-- `src/utils/scoring.js`: pure scoring, critical-gap cap and recommendation functions; no UI or bundled data imports.
-- `src/utils/scoreAssessment.js`: connects the pure engine to the real question bank for the UI.
-- `scripts/test-scoring.mjs`: scoring tests using Node built-ins.
-- `scripts/validate-questions.mjs`: question bank validation using Node's built-in modules.
-- `scripts/test-storage.cjs`: storage tests with isolated temporary files.
-- `electron/storage.cjs`: validated, atomic JSON storage; `electron/ipc/handlers.cjs` registers the storage calls.
-- `src/hooks/useAssessment.js`: reducer, progress helpers and debounced auto-save.
-- `src/components/assessment/`: intro/resume, domain questions, progress, review and completion screens.
-- `src/hooks/`: the theme hook reads a saved choice or OS preference, applies `data-theme`, and safely saves the choice under `ransomready-theme`.
-- `src/components/`: shared layout, sidebar, header, theme toggle and placeholder card.
-- `src/pages/`: Home, About, the Assessment wizard, Dashboard, Scanner and the Reports placeholder.
-- `src/styles/`: layout and component CSS; global reset, spacing and theme variables live in `src/index.css`.
-
-Navigation uses React state without a router. Use Tab / Shift+Tab to move through buttons and Enter / Space to activate them. The header's theme button switches light/dark mode; the choice survives restarts when localStorage is available.
-
-## Verify the setup
-
-In the Electron window, visit all six sidebar pages and check that the active item and header agree. Home's Start Assessment button opens the wizard with 32 questions across 8 domains. Enter an organisation, answer some questions, wait for auto-save, quit Electron completely and reopen to check the Resume card, answer count and saved step. Next requires all four answers; incomplete earlier domains block jumping ahead. Radio buttons support arrow keys; Tab reaches navigation buttons and the expandable explanations. Complete all 32 answers, review/edit, then submit: the completion screen shows the overall percent, maturity badge and a View dashboard button; a JSON file containing answers and metadata (no scores) exists in userData/assessments, and draft.json is removed. All Yes should give 100% / Level 5 (Resilient); all No should give 0% / Level 1 (Initial). Toggle the theme on that page and restart the app to check persistence. The About page should show real Electron, Node and Chrome versions. In DevTools, check:
-
-```js
-Object.keys(window.api)     // exactly 12 methods: the existing 6 plus chooseScanFolder, startScan, cancelScan, revealInFolder, getLatestScan, onScanProgress
-await window.api.getAppInfo() // App metadata and runtime versions
-window.require              // undefined
-window.process              // undefined
-```
-
-Confirm that the console has no errors or warnings. `npm run build` should complete successfully, and `npm start` should show the same versions from the built UI. Without a saved theme, the initial screen follows your operating system's light or dark preference.
-
-## Question bank
-
-The app imports `src/data/domains.json` and `src/data/questions.json` through Vite, so the data is bundled with the UI and is not read from disk at runtime. The Assessment wizard uses these bundled domains and questions; Completed files store answers only; Phase 5 calculates scores from those answers whenever results are needed.
-
-`domains.json` is an array of 8 objects:
-
-| Field | Meaning |
-| --- | --- |
-| `id` | Unique domain ID: `backup`, `access`, `patching`, `email`, `network`, `detection`, `incident` or `awareness` |
-| `name` | Display name |
-| `description` | One-sentence description |
-| `order` | Display order, from 1 to 8 |
-
-`questions.json` is an array of 32 objects, with exactly 4 per domain:
-
-| Field | Meaning |
-| --- | --- |
-| `id` | Unique ID using the domain prefix (`BKP`, `ACC`, `PAT`, `EML`, `NET`, `DET`, `INC`, `AWR`) and number `01` to `04`, such as `BKP-01` |
-| `domainId` | ID of the domain the question belongs to |
-| `text` | Plain-language yes/no question beginning with “Does your organisation...” or “Are ...” |
-| `why` | One or two plain sentences explaining why the topic matters against ransomware |
-| `recommendation` | One actionable imperative sentence for answers other than Yes |
-| `weight` | Priority: `3` = critical, `2` = important, `1` = good practice |
-
-Every domain includes at least one critical question. Weights express this project's relative priorities and feed the scoring engine.
-
-`src/config/answerOptions.js` defines the answer options and scoring values: Yes, fully in place = `1`; Partially in place = `0.5`; No = `0`; Not sure = `0`. Not sure counts as zero because not knowing whether protection exists is itself a gap. The scoring engine reads these values from configuration.
-
-`src/utils/questionBank.js` exports `domains` sorted by order, `questions`, `getQuestionsByDomain(domainId)`, `getQuestionById(id)`, `getDomainById(id)` and `getTotalQuestionCount()`. Unknown question or domain lookups return `undefined`; an unknown domain's question list is empty. `src/config/domainIcons.js` maps domain IDs to icons and exports a fallback icon for unknown IDs.
-
-Validate the data without starting Electron:
-
-```sh
-npm run check:data
-```
-
-The validator checks the domain schema and IDs, unique question IDs and prefixes, required non-empty text fields, question wording, domain references, valid weights, four questions and at least one critical question per domain, and the total of 32 questions. It prints PASS or FAIL messages and exits with code 1 on failure.
-
-The questions are based on widely recommended good-practice guidance and are not a formal compliance certification. Background references include the [CISA #StopRansomware Guide](https://www.cisa.gov/stopransomware/ransomware-guide) and [CERT-In's official incident reporting contact information](https://www.cert-in.org.in/s2cMainServlet?pageid=CONTACTUS); organisations should consult CERT-In's current official reporting steps when maintaining their response contacts.
-
-## Scoring methodology
-
-Question points = weight × answer score; maximum points = weight. Weights are **3 = critical**, **2 = important**, **1 = good practice**. Answer scores are **Yes = 1**, **Partial = 0.5**, **No = 0**, **Not sure = 0**.
-
-Domain percent = (domain points / domain maximum points) × 100. Overall percent = (total points / total maximum points) × 100 across all questions, rather than an average of domain percents. Each percent is rounded once to one decimal place with `Math.round(value * 10) / 10`; that rounded number is also used for level lookup.
-
-| Level | Name | Percent range |
-| --- | --- | --- |
-| 1 | Initial | 0–24.9 |
-| 2 | Developing | 25–49.9 |
-| 3 | Defined | 50–69.9 |
-| 4 | Managed | 70–84.9 |
-| 5 | Resilient | 85–100 |
-
-A critical gap is a weight-3 question answered No or Not sure. With three or more critical gaps, the overall level cannot exceed Level 2 (Developing). The percent stays unchanged and the summary explains any applied cap. Individual domain levels are never capped.
-
-Every answer other than Yes produces a recommendation. Its priority score is `weight × (1 - answer score)`. Recommendations sort by this score descending, then weight descending, then domain order ascending, then question ID ascending. Labels come from weight: 3 = High, 2 = Medium, 1 = Low. The dashboard shows the first eight matching recommendations, with a Show all toggle and priority/domain filters.
-
-Scores are never stored in saved files. Only answers are stored as assessment responses, alongside the existing metadata, so assessments can be re-scored when the methodology changes. The weights and level thresholds are design choices made for this project, not an official industry standard.
-
-Run the scoring tests without Electron or a bundler:
-
-```sh
-npm run test:scoring
-```
-
-## Dashboard
-
-The Dashboard loads the latest completed assessment through `window.api.getLatestAssessment()`. Results are always recalculated from saved answers with `scoreAssessment`; scores are never stored. Loading, empty, unavailable desktop bridge, storage error (with Retry), and unscorable older-assessment states are handled without crashing.
-
-`src/components/dashboard/` contains reusable components that receive props and never fetch data:
-
-- `DashboardHeader`: organisation, assessor, local completion date, maturity cap notice and Reassess action.
-- `ScoreGauge` and `RadarChart`: overall percentage and eight domain scores, with accessible chart labels and a screen-reader domain table.
-- `DomainBars`, `StatsRow` and `WeakAreas`: domain scores and levels, answer counts, gap counts and three weakest domains.
-- `RecommendationsPanel`: priority/domain filters, readable current answers and an eight-item expandable list.
-- `DashboardEmpty`: a Start assessment action when no completed assessment exists.
-
-Charts use plain SVG and CSS with no chart library or new dependencies. Geometry and filtering helpers live in `src/utils/chartMath.js`. Both themes use the existing shared colour variables; charts show numbers or level names alongside colour, bars expose progress values, and transitions respect reduced-motion preferences.
-
-Run the chart helper tests (Node built-ins only):
-
-```sh
-npm run test:chartmath
-```
-
-For a manual check, finish an assessment and select View dashboard. Check the gauge, radar, eight domain bars, five statistics, weakest areas and recommendations. Try both filters, Show all / Show fewer and a filter combination with no matches. All Yes should show 100% and “No gaps found. Keep testing and improving.”; all No should show 0%, Level 1 and radar vertices at the centre. Check light/dark themes, narrow widths, keyboard focus and visible radar labels. Reassess opens the Assessment page, where an existing draft can still be resumed.
+- This is a self-assessment, not a formal audit, certification or compliance statement. Answers are not independently verified.
+- Weights, thresholds and maturity labels are project design choices.
+- The scanner uses a small sample indicator list and checks file names only. False positives and false negatives are possible. A clean result does not prove a computer is safe; RansomReady is not an antivirus or continuous monitor.
+- Scans skip symlinks, `.git` and `node_modules`. Defaults limit scans to 200,000 files, depth 25 and 500 retained findings. Unreadable entries are skipped; cancellation/limits yield partial results. PDFs list up to 25 retained findings, with original scan counts.
+- The latest scan may concern a different folder or date from the assessment. It is a separate point-in-time check and never affects readiness scoring.
+- Only the latest assessment is displayed. No history browser, report library, cloud sync or external analysis is implemented.
+- The macOS app is unsigned by a verified developer and is not notarized. Packaging configuration does not prove a release has passed native testing.
 
 ## Roadmap
 
-- [x] Phase 1: Setup
-- [x] Phase 2: UI shell
+- [x] Phase 1: Secure Electron foundation
+- [x] Phase 2: UI shell and theme
 - [x] Phase 3: Question bank
-- [x] Phase 4: Assessment wizard
+- [x] Phase 4: Assessment wizard and save/resume
 - [x] Phase 5: Scoring engine
-- [x] Phase 6: Dashboard and charts
-- [x] Phase 7: Early-sign scanner
-- [ ] Phase 8: Reports, history and polish
+- [x] Phase 6: Dashboard and SVG charts
+- [x] Phase 7: Read-only early-sign scanner and macOS packaging configuration
+- [x] Phase 8: PDF export, page error boundary and final documentation
 
-## Early-sign scanner
+## Author
 
-The read-only scanner checks file **names** for three types of possible indicators:
-
-- Possible ransom-note names (High), such as `HOW_TO_RECOVER_FILES.txt`.
-- Ransomware-style extensions: known family sample extensions such as `.wncry` (High), and generic encrypted-style extensions such as `.locked` (Medium).
-- Unusual double extensions after a document extension, such as `report.docx.x7k2q9` (Low). Common backup, download and archive endings are excluded.
-
-Only the highest-priority matching rule is reported per file. Matching ignores case. The indicator list in `electron/scanner/indicators.json` is a small demonstration sample, not complete or authoritative. False positives are possible. The scanner does not read file contents, detect malware, monitor activity or act as an antivirus. A clean result does not prove your computer is safe.
-
-The scanner only lists directories and reads metadata. It never opens file contents, writes, deletes, renames or moves scanned files, and sends nothing over the network. Results include names, relative paths, size and modification time. Only the latest scan is saved, atomically, in `latest-scan.json` under the app's userData folder; a new saved scan replaces it. No scan history or reports are created.
-
-The renderer cannot supply a scan path. The main process holds the folder chosen in a native directory dialog and refuses filesystem roots. Show in Finder validates relative paths against path traversal and checks resolved symlink targets remain inside the scanned folder. Symlinks are skipped during scanning, as are `node_modules` and `.git`. Defaults are 200,000 files, depth 25 (root at depth 0), and 500 retained findings; counts continue beyond the findings cap. Unreadable items are counted and skipped. Cancellation and file limits produce explicitly partial results. Directory walking yields every 500 entries for responsiveness, with progress updates at most four times per second.
-
-Try the harmless demo:
-
-```sh
-npm run demo:scan-folder
-npm run test:scanner
-```
-
-The generator recreates only `ransomready-demo-folder` under your operating system's temporary directory, outside the project. It writes harmless text under demonstration filenames and verifies the expected counts: **2 High, 2 Medium, 1 Low**, across 9 files. In the app, open Scanner, choose the printed folder path, and select Start scan. Filter findings by severity and use Show in Finder to reveal an entry. Test Cancel on a larger folder, both themes and keyboard controls. Leaving the Scanner page requests cancellation. The saved last-scan card shows folder, time, status and counts when idle.
-
-If findings look real, disconnect the device from the network, do not open or run suspicious files, do not pay a ransom, keep logs, contact your IT/security team and report to CERT-In (`cert-in.org.in`).
+**[Your name, college, department and project details here]**
