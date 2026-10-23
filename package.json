@@ -23,7 +23,8 @@
     "dist:mac:arm64": "npm run build && electron-builder --mac dmg --arm64",
     "dist:mac:x64": "npm run build && electron-builder --mac dmg --x64",
     "test:scanner": "node scripts/test-scanner.cjs",
-    "demo:scan-folder": "node scripts/create-demo-folder.cjs"
+    "demo:scan-folder": "node scripts/create-demo-folder.cjs",
+    "test:report": "node scripts/test-report.mjs"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.1.2",
