@@ -1,0 +1,17 @@
+appId: com.ransomready.app
+productName: RansomReady
+directories:
+  output: release
+files:
+  - dist/**/*
+  - electron/**/*
+  - package.json
+asar: true
+npmRebuild: false
+artifactName: "RansomReady-${version}-${arch}.${ext}"
+mac:
+  category: public.app-category.utilities
+  identity: "-"
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  notarize: false
