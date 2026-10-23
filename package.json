@@ -3,7 +3,8 @@
   "productName": "RansomReady",
   "version": "0.1.0",
   "private": true,
-  "description": "Ransomware readiness assessment tool \u2014 Phase 1 setup.",
+  "description": "Ransomware Readiness Assessment Tool",
+  "author": "CodeCatalyst-07",
   "type": "module",
   "main": "electron/main.cjs",
   "engines": {
@@ -16,18 +17,21 @@
     "test:storage": "node scripts/test-storage.cjs",
     "test:scoring": "node scripts/test-scoring.mjs",
     "start": "npm run build && cross-env ELECTRON_DEV=false electron .",
-    "test:chartmath": "node scripts/test-chartmath.mjs"
-  },
-  "dependencies": {
-    "lucide-react": "^1.59.0",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "test:chartmath": "node scripts/test-chartmath.mjs",
+    "pack": "npm run build && electron-builder --dir",
+    "dist:mac": "npm run build && electron-builder --mac dmg --universal",
+    "dist:mac:arm64": "npm run build && electron-builder --mac dmg --arm64",
+    "dist:mac:x64": "npm run build && electron-builder --mac dmg --x64"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.1.2",
     "concurrently": "^10.0.5",
     "cross-env": "^10.1.0",
+    "lucide-react": "^1.59.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
     "vite": "^8.3.4",
     "wait-on": "^9.1.0"
   },
