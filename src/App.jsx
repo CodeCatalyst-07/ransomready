@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { navigation } from './config/navigation.js';
 import { useTheme } from './hooks/useTheme.js';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 import Layout from './components/Layout.jsx';
 import './styles/layout.css';
 import './styles/components.css';
@@ -21,7 +22,9 @@ export default function App() {
   return (
     <Layout currentPage={currentPage} title={activeItem.label}
       navigate={navigate} theme={theme} toggleTheme={toggleTheme}>
-      <Page navigate={navigate} />
+      <ErrorBoundary key={currentPage} navigate={navigate}>
+        <Page navigate={navigate} />
+      </ErrorBoundary>
     </Layout>
   );
 }
