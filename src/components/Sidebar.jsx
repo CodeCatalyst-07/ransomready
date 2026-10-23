@@ -1,7 +1,22 @@
+import { useEffect, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { navigation } from '../config/navigation.js';
 
 export default function Sidebar({ currentPage, navigate }) {
+  const [version, setVersion] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    async function loadVersion() {
+      try {
+        const info = await window.api?.getAppInfo?.();
+        if (active && typeof info?.version === 'string') setVersion(info.version);
+      } catch { /* An unavailable version is simply hidden. */ }
+    }
+    loadVersion();
+    return () => { active = false; };
+  }, []);
+
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -20,7 +35,7 @@ export default function Sidebar({ currentPage, navigate }) {
         ))}
       </nav>
       <div className="sidebar-footer">
-        <span>RansomReady</span><span>v0.1.0</span>
+        <span>RansomReady</span>{version && <span>v{version}</span>}
       </div>
     </aside>
   );
