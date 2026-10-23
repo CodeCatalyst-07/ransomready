@@ -12,27 +12,25 @@ A local desktop app for assessing an organisation’s ransomware readiness, chec
 
 ## Table of Contents
 
-- [RansomReady](#ransomready)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-  - [Download and install (macOS)](#download-and-install-macos)
-    - [Opening an unsigned app](#opening-an-unsigned-app)
-    - [Using the app in 4 steps](#using-the-app-in-4-steps)
-  - [Why Electron?](#why-electron)
-  - [Tech stack](#tech-stack)
-  - [Features](#features)
-  - [Screenshots](#screenshots)
-  - [Architecture](#architecture)
-    - [Data flow](#data-flow)
-    - [Files in userData](#files-in-userdata)
-  - [Security design](#security-design)
-  - [Scoring methodology](#scoring-methodology)
-  - [Project structure](#project-structure)
-  - [How to run](#how-to-run)
-  - [How to test](#how-to-test)
-  - [Packaging for macOS](#packaging-for-macos)
-  - [Limitations and honest notes](#limitations-and-honest-notes)
-  - [Author](#author)
+- [Overview](#overview)
+- [Download and install (macOS)](#download-and-install-macos)
+  - [Opening an unsigned app](#opening-an-unsigned-app)
+  - [Using the app in 4 steps](#using-the-app-in-4-steps)
+- [Why Electron?](#why-electron)
+- [Tech stack](#tech-stack)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Architecture](#architecture)
+  - [Data flow](#data-flow)
+  - [Files in userData](#files-in-userdata)
+- [Security design](#security-design)
+- [Scoring methodology](#scoring-methodology)
+- [Project structure](#project-structure)
+- [How to run](#how-to-run)
+- [How to test](#how-to-test)
+- [Packaging for macOS](#packaging-for-macos)
+- [Limitations and honest notes](#limitations-and-honest-notes)
+- [Author](#author)
 
 ## Overview
 
@@ -45,8 +43,9 @@ signs; its results do not affect the readiness score.
 ## Download and install (macOS)
 
 The download location is [GitHub Releases](https://github.com/CodeCatalyst-07/ransomready/releases).
-Apple Silicon (**arm64**) is the main release build. If no DMG asset is visible,
-use [How to run](#how-to-run) or [Packaging for macOS](#packaging-for-macos).
+The release build is for **Apple Silicon Macs (M1 or later, arm64)**.
+To check your Mac, open the **Apple menu → About This Mac → Chip**.
+For other systems, see [How to run](#how-to-run); those systems have not been verified.
 
 1. Download the `.dmg` for your Mac from the Releases page.
 2. Open the disk image.
@@ -54,8 +53,7 @@ use [How to run](#how-to-run) or [Packaging for macOS](#packaging-for-macos).
 4. Open **RansomReady** from Applications.
 
 The app was developed and tested on macOS, and only a macOS installer is provided.
-The source instructions below may be tried on other systems at your own risk;
-those systems have not been verified for this project.
+Trying the source instructions on other systems is at your own risk.
 
 ### Opening an unsigned app
 
@@ -68,7 +66,7 @@ For a trusted project build, right-click `/Applications/RansomReady.app`, choose
 **Open**, then confirm **Open**. Alternatively, for this trusted copy only, remove
 its quarantine attributes and then open the app:
 
-```sh
+```bash
 xattr -cr /Applications/RansomReady.app
 ```
 
@@ -129,14 +127,12 @@ recalculated from saved answers, never stored.
 
 ## Screenshots
 
-The image files below must be added before submission.
-
 | Screen | Preview and caption |
 | --- | --- |
-| Dashboard | ![Dashboard showing readiness score, domain charts and recommendations](docs/screenshots/dashboard.png)<br>Readiness results and prioritised improvements. |
-| Assessment | ![Assessment wizard showing domain questions and answer choices](docs/screenshots/assessment.png)<br>Answer questions and review saved progress. |
-| Scanner | ![Early-sign scanner showing file-name findings and severity counts](docs/screenshots/scanner.png)<br>A separate read-only check of a chosen folder. |
-| PDF report | ![Exported PDF report showing the assessment summary and domain results](docs/screenshots/report.png)<br>A printable summary with recommendations and optional scan results. |
+| Dashboard | <a href="docs/screenshots/dashboard.png"><img src="docs/screenshots/dashboard.png" alt="Dashboard showing readiness score, domain charts and recommendations" width="480"></a><br>Readiness results and prioritised improvements. |
+| Assessment | <a href="docs/screenshots/assessment.png"><img src="docs/screenshots/assessment.png" alt="Assessment wizard showing domain questions and answer choices" width="480"></a><br>Answer questions and review saved progress. |
+| Scanner | <a href="docs/screenshots/scanner.png"><img src="docs/screenshots/scanner.png" alt="Early-sign scanner showing file-name findings and severity counts" width="480"></a><br>A separate read-only check of a chosen folder. |
+| PDF report | <a href="docs/screenshots/report.png"><img src="docs/screenshots/report.png" alt="Exported PDF report showing the assessment summary and domain results" width="480"></a><br>A printable summary with recommendations and optional scan results. |
 
 ## Architecture
 
@@ -271,7 +267,7 @@ Use Node.js **22.12.0 or newer**, npm and Git. This minimum matches the project�
 `engines` field and satisfies the installed Vite engine requirement. Initial
 dependency installation requires internet access.
 
-```sh
+```bash
 git clone https://github.com/CodeCatalyst-07/ransomready.git
 cd ransomready
 npm install
@@ -283,7 +279,7 @@ Keep port 5173 free. React edits refresh automatically; restart the app after
 Electron/preload changes. Stop with Ctrl+C to end both processes. A browser
 preview has no desktop bridge, assessment storage, scanner or PDF export access.
 
-```sh
+```bash
 npm run build  # Build renderer into dist/
 npm start      # Build and open the desktop app using dist/index.html
 ```
@@ -293,14 +289,14 @@ npm start      # Build and open the desktop app using dist/index.html
 The test scripts use Node built-in modules; no additional test or PDF
 dependencies are required. Observed results on macOS:
 
-```sh
+```bash
 npm run test:storage    # 10 tests passed: validation, atomic storage and failure handling
 npm run test:scoring    # 12 tests passed: percentages, levels, cap and recommendation ordering
 npm run test:chartmath  # 16 tests passed: SVG geometry, filtering and weakest-domain helpers
 npm run test:scanner    # 19 tests passed: name rules, traversal, limits, cancellation and symlinks
 npm run test:report     #  8 tests passed: escaping, CSP, scores, domains and optional scan
 npm run check:data      # 245 validation checks passed: question-bank schema and consistency
-npm run build          # Production renderer build; not part of the test count
+npm run build           # Production renderer build; not part of the test count
 ```
 
 **Total: 65 tests and 245 data-validation checks passed (310 in total).**
@@ -318,7 +314,7 @@ folder and verifies the counts: 2 High, 2 Medium and 1 Low across 9 files.
 2. Check Reports with no assessment, then with a completed assessment. Its score, level and critical-gap count should match Dashboard. Check the scan line with and without a saved scan.
 3. Export from Dashboard and Reports. Choose a location, open the PDF and inspect its sections, chart and recommendations. Only a report with a saved scan includes the scan section. Cancel the save dialog and confirm no file or success/error message is produced.
 4. Confirm export is disabled while busy. Failures show a dismissible error; success shows a dismissible saved-path status that clears after eight seconds.
-5. Temporarily throw an error while rendering a page to check the error fallback and navigation. Remove the throw and verify recovery. **Never leave the deliberate throw in submitted code.**
+5. Temporarily throw an error while rendering a page to check the error fallback and navigation. Remove the throw and verify recovery. **Never leave the deliberate throw in committed code.**
 6. Check both themes, visible keyboard focus, Tab/Shift+Tab and Enter/Space. Check the sidebar’s runtime version and inspect the console for unexpected errors or warnings. The deliberate boundary test should log its error.
 7. In Electron DevTools, verify `Object.keys(window.api).length === 13`, `window.require === undefined` and `window.process === undefined`.
 
@@ -326,11 +322,10 @@ folder and verifies the counts: 2 High, 2 Medium and 1 Low across 9 files.
 
 ## Packaging for macOS
 
-Run on a Mac after `npm install`. Check the author in `package.json` before
-submission.
+Run on a Mac after `npm install`.
 
-```sh
-npm run pack           # Unpacked .app for smoke testing on this Mac
+```bash
+npm run pack            # Unpacked .app for smoke testing on this Mac
 npm run dist:mac:arm64  # Main Apple Silicon DMG build
 npm run dist:mac        # Universal DMG target for Intel and Apple Silicon
 npm run dist:mac:x64    # Intel DMG target
