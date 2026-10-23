@@ -13,7 +13,7 @@ RansomReady is a college project addressing NTRO problem statement 317: a Ransom
 - lucide-react for icons
 - concurrently, wait-on and cross-env for portable development scripts
 
-No database, external API integration, custom native modules or packaging tools are used.
+electron-builder packages the desktop app for macOS. No database, external API integration or custom native modules are used.
 
 The npm override selects a patched `shell-quote` version for concurrently's development scripts; see [GHSA-pqg4-j6r4-53mv](https://github.com/advisories/GHSA-pqg4-j6r4-53mv).
 
@@ -79,6 +79,32 @@ npm start
 ```
 
 This is a local production-like run, not an installer or packaged release. A browser preview at the Vite URL works too; its About page displays a friendly runtime message because Electron's bridge is only available in the desktop window.
+
+## Packaging for macOS
+
+Run these commands on a Mac after `npm install`. Replace the `author` placeholder in `package.json` with your name before submission.
+
+```sh
+# Build an unpacked .app for smoke testing on this Mac
+npm run pack
+
+# Build one universal .dmg for Intel and Apple Silicon Macs
+npm run dist:mac
+
+# Architecture-specific fallbacks if the universal build fails or is too large
+npm run dist:mac:arm64
+npm run dist:mac:x64
+```
+
+Output appears in `release/`. The unpacked app is inside an architecture-specific subfolder; disk images are named `RansomReady-0.1.0-<arch>.dmg`. The default disk image layout includes the app and an Applications folder shortcut. Open the disk image and drag RansomReady into Applications.
+
+The trial .dmg is **not code-signed with an Apple Developer certificate or notarized** (no paid Apple developer account), so macOS shows an “unidentified developer” warning on first open. The app uses a local ad-hoc signature for Apple Silicon compatibility; this does not verify the developer's identity. For this trusted project build, right-click `/Applications/RansomReady.app`, choose **Open**, then confirm **Open**. Alternatively, run this in Terminal, then open the app:
+
+```sh
+xattr -cr /Applications/RansomReady.app
+```
+
+The .dmg is not stored in git; share it through GitHub Releases or a download link.
 
 ## Project structure
 
