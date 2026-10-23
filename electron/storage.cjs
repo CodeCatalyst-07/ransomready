@@ -21,6 +21,17 @@ function serialize(payload) {
   return json;
 }
 
+function serializeScan(result) {
+  if (!isPlainObject(result)) throw new Error('Scan result must be a plain object.');
+  if (!Array.isArray(result.findings) || result.findings.length > 500) {
+    throw new Error('Scan findings must be an array of at most 500 items.');
+  }
+  let json;
+  try { json = JSON.stringify(result, null, 2); } catch { throw new Error('Scan result must be JSON serializable.'); }
+  if (Buffer.byteLength(json, 'utf8') >= 1024 * 1024) throw new Error('Scan result must be under 1 MB.');
+  return json;
+}
+
 function createStorage(baseDir) {
   const draftPath = path.join(baseDir, 'draft.json');
   const assessmentsDir = path.join(baseDir, 'assessments');
@@ -58,6 +69,20 @@ function createStorage(baseDir) {
   }
 
   return {
+    saveScan: (result) => enqueue(async () => {
+      await atomicWrite(path.join(baseDir, 'latest-scan.json'), serializeScan(result));
+      return result;
+    }),
+    getLatestScan: () => enqueue(async () => {
+      try {
+        const result = JSON.parse(await fs.readFile(path.join(baseDir, 'latest-scan.json'), 'utf8'));
+        serializeScan(result);
+        return result;
+      } catch (error) {
+        if (error.code && error.code !== 'ENOENT') throw error;
+        return null;
+      }
+    }),
     saveDraft: (draft) => enqueue(async () => {
       await atomicWrite(draftPath, serialize(draft));
       return draft;
