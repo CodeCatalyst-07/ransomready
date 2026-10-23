@@ -1,0 +1,10 @@
+{
+  "_comment": "A small sample list for demonstration, not a complete or authoritative list of ransomware indicators.",
+  "noteKeywords": ["decrypt", "ransom", "how_to_recover", "how_to_restore", "restore_files", "recover_files", "files_encrypted", "your_files"],
+  "noteExtensions": [".txt", ".html", ".htm", ".hta", ".rtf", ".url"],
+  "familyExtensions": [".wncry", ".wcry", ".ryk", ".lockbit", ".akira"],
+  "genericExtensions": [".locked", ".encrypted", ".crypt", ".crypted", ".enc"],
+  "documentExtensions": [".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf", ".txt", ".jpg", ".jpeg", ".png", ".csv", ".odt", ".zip"],
+  "benignSecondExtensions": [".bak", ".tmp", ".old", ".part", ".crdownload", ".download", ".swp", ".orig", ".gz", ".zip", ".bz2", ".7z", ".sig", ".asc", ".md5", ".sha1", ".sha256", ".docx", ".xlsx", ".pdf", ".txt", ".jpg", ".png"],
+  "skipFolders": ["node_modules", ".git"]
+}
