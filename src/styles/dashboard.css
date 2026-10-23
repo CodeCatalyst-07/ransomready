@@ -75,3 +75,6 @@
 @media (prefers-reduced-motion: reduce) {
   .gauge-arc, .domain-score-fill { transition: none; }
 }
+
+.dashboard-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.dashboard-actions button:disabled { opacity: 0.55; cursor: not-allowed; }
