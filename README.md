@@ -123,7 +123,7 @@ The .dmg is not stored in git; share it through GitHub Releases or a download li
 - `src/components/assessment/`: intro/resume, domain questions, progress, review and completion screens.
 - `src/hooks/`: the theme hook reads a saved choice or OS preference, applies `data-theme`, and safely saves the choice under `ransomready-theme`.
 - `src/components/`: shared layout, sidebar, header, theme toggle and placeholder card.
-- `src/pages/`: Home, About, the Assessment wizard, Dashboard and two feature placeholders.
+- `src/pages/`: Home, About, the Assessment wizard, Dashboard, Scanner and the Reports placeholder.
 - `src/styles/`: layout and component CSS; global reset, spacing and theme variables live in `src/index.css`.
 
 Navigation uses React state without a router. Use Tab / Shift+Tab to move through buttons and Enter / Space to activate them. The header's theme button switches light/dark mode; the choice survives restarts when localStorage is available.
@@ -133,7 +133,7 @@ Navigation uses React state without a router. Use Tab / Shift+Tab to move throug
 In the Electron window, visit all six sidebar pages and check that the active item and header agree. Home's Start Assessment button opens the wizard with 32 questions across 8 domains. Enter an organisation, answer some questions, wait for auto-save, quit Electron completely and reopen to check the Resume card, answer count and saved step. Next requires all four answers; incomplete earlier domains block jumping ahead. Radio buttons support arrow keys; Tab reaches navigation buttons and the expandable explanations. Complete all 32 answers, review/edit, then submit: the completion screen shows the overall percent, maturity badge and a View dashboard button; a JSON file containing answers and metadata (no scores) exists in userData/assessments, and draft.json is removed. All Yes should give 100% / Level 5 (Resilient); all No should give 0% / Level 1 (Initial). Toggle the theme on that page and restart the app to check persistence. The About page should show real Electron, Node and Chrome versions. In DevTools, check:
 
 ```js
-Object.keys(window.api)     // getAppInfo, saveDraft, loadDraft, clearDraft, saveAssessment, getLatestAssessment
+Object.keys(window.api)     // exactly 12 methods: the existing 6 plus chooseScanFolder, startScan, cancelScan, revealInFolder, getLatestScan, onScanProgress
 await window.api.getAppInfo() // App metadata and runtime versions
 window.require              // undefined
 window.process              // undefined
@@ -237,5 +237,30 @@ For a manual check, finish an assessment and select View dashboard. Check the ga
 - [x] Phase 4: Assessment wizard
 - [x] Phase 5: Scoring engine
 - [x] Phase 6: Dashboard and charts
-- [ ] Phase 7: Early-sign scanner
+- [x] Phase 7: Early-sign scanner
 - [ ] Phase 8: Reports, history and polish
+
+## Early-sign scanner
+
+The read-only scanner checks file **names** for three types of possible indicators:
+
+- Possible ransom-note names (High), such as `HOW_TO_RECOVER_FILES.txt`.
+- Ransomware-style extensions: known family sample extensions such as `.wncry` (High), and generic encrypted-style extensions such as `.locked` (Medium).
+- Unusual double extensions after a document extension, such as `report.docx.x7k2q9` (Low). Common backup, download and archive endings are excluded.
+
+Only the highest-priority matching rule is reported per file. Matching ignores case. The indicator list in `electron/scanner/indicators.json` is a small demonstration sample, not complete or authoritative. False positives are possible. The scanner does not read file contents, detect malware, monitor activity or act as an antivirus. A clean result does not prove your computer is safe.
+
+The scanner only lists directories and reads metadata. It never opens file contents, writes, deletes, renames or moves scanned files, and sends nothing over the network. Results include names, relative paths, size and modification time. Only the latest scan is saved, atomically, in `latest-scan.json` under the app's userData folder; a new saved scan replaces it. No scan history or reports are created.
+
+The renderer cannot supply a scan path. The main process holds the folder chosen in a native directory dialog and refuses filesystem roots. Show in Finder validates relative paths against path traversal and checks resolved symlink targets remain inside the scanned folder. Symlinks are skipped during scanning, as are `node_modules` and `.git`. Defaults are 200,000 files, depth 25 (root at depth 0), and 500 retained findings; counts continue beyond the findings cap. Unreadable items are counted and skipped. Cancellation and file limits produce explicitly partial results. Directory walking yields every 500 entries for responsiveness, with progress updates at most four times per second.
+
+Try the harmless demo:
+
+```sh
+npm run demo:scan-folder
+npm run test:scanner
+```
+
+The generator recreates only `ransomready-demo-folder` under your operating system's temporary directory, outside the project. It writes harmless text under demonstration filenames and verifies the expected counts: **2 High, 2 Medium, 1 Low**, across 9 files. In the app, open Scanner, choose the printed folder path, and select Start scan. Filter findings by severity and use Show in Finder to reveal an entry. Test Cancel on a larger folder, both themes and keyboard controls. Leaving the Scanner page requests cancellation. The saved last-scan card shows folder, time, status and counts when idle.
+
+If findings look real, disconnect the device from the network, do not open or run suspicious files, do not pay a ransom, keep logs, contact your IT/security team and report to CERT-In (`cert-in.org.in`).
