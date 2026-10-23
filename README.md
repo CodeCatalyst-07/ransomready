@@ -10,11 +10,11 @@ RansomReady is a college project addressing **NTRO problem statement 317**, a Ra
 - Scoring: weighted answers, five maturity levels, critical-gap cap and prioritised recommendations. Scores are recalculated from saved answers, never stored.
 - Dashboard: overall score, SVG radar chart, domain bars, answer counts, weakest areas and recommendation filters.
 - Early-sign scanner: native folder selection, progress, cancellation, severity filters, Show in Finder and the latest saved scan. Checks names and metadata only.
-- PDF report: export from Dashboard through the native save dialog, using Electron’s built-in `printToPDF`. Includes every recommendation and the latest scan when available; scan findings are limited to 25 in the report. Successful export reveals the PDF in Finder.
+- PDF report: export from Dashboard or Reports through the native save dialog, using Electron’s built-in `printToPDF`. Includes every recommendation and the latest scan when available; scan findings are limited to 25 in the report. Successful export reveals the PDF in Finder.
 - Local-only storage: answers and the latest scan stay in Electron’s `userData` folder. The theme preference alone uses localStorage.
 - Page error recovery: a friendly error card with Try again and Go to Home actions.
 
-PDF export is on Dashboard. The existing Reports sidebar page remains a placeholder; no report or assessment history browser is implemented.
+Reports shows the latest assessment summary, optional scan details and PDF export, with a link to the Dashboard. Earlier assessments remain saved locally but are not shown in the app.
 
 ## Screenshots
 
@@ -47,7 +47,7 @@ Files under `app.getPath('userData')`:
 
 - `draft.json`: answers, organisation/assessor, wizard position and timestamps.
 - `assessments/assessment-<timestamp>.json`: completed answers and metadata, with no stored scores. The UI uses only the latest completed assessment.
-- `latest-scan.json`: latest scan, replacing the previous scan; no scan history.
+- `latest-scan.json`: latest scan, replacing the previous scan.
 
 On macOS this is normally `~/Library/Application Support/RansomReady`. The About page shows the actual path, also available through `(await window.api.getAppInfo()).dataPath` in Electron DevTools. Electron may create its own cache/preferences there too.
 
@@ -94,10 +94,12 @@ electron/
 src/
   App.jsx                  Page navigation and error boundary
   components/              Layout, ErrorBoundary, assessment/dashboard/scanner UI
+    ExportStatus.jsx       Shared export success/error message and dismiss action
   pages/                   Home, Assessment, Dashboard, Scanner, Reports, About
   config/                  Navigation, answer options and maturity levels
   data/                    Eight domains and 32 questions
   hooks/                   Assessment state/save-resume and theme
+    useReportExport.js     Shared PDF export flow for Dashboard and Reports
   utils/                   Question helpers, scoring, chart maths, report HTML
   styles/                  Layout and component styles
 scripts/                   Data validation, Node tests and harmless scan demo
@@ -176,7 +178,7 @@ Then open the app. Keep DMGs out of the repository; distribute them through a re
 - The scanner uses a small sample indicator list and checks file names only. False positives and false negatives are possible. A clean result does not prove a computer is safe; RansomReady is not an antivirus or continuous monitor.
 - Scans skip symlinks, `.git` and `node_modules`. Defaults limit scans to 200,000 files, depth 25 and 500 retained findings. Unreadable entries are skipped; cancellation/limits yield partial results. PDFs list up to 25 retained findings, with original scan counts.
 - The latest scan may concern a different folder or date from the assessment. It is a separate point-in-time check and never affects readiness scoring.
-- Only the latest assessment is displayed. No history browser, report library, cloud sync or external analysis is implemented.
+- Only the latest assessment is displayed. No report library, cloud sync or external analysis is implemented.
 - The macOS app is unsigned by a verified developer and is not notarized. Packaging configuration does not prove a release has passed native testing.
 
 ## Roadmap
